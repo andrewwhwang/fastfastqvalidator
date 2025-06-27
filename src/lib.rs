@@ -30,7 +30,7 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
     let mut reader = BufReader::new(file);
     let mut buffer = Vec::new();
 
-    let mut read_ids = HashSet::new();
+    let mut read_ids = HashSet::with_capacity(10000);
 
     let mut len_read_seq = 0;
     let mut line_num: u128 = 0;
@@ -47,22 +47,22 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
             1 => { // read ID
                 if !buffer.starts_with(b"@") {
                     return Err(format!(
-                        "Input file: {}\nFastQ Format Error: Record 1 expected '@' but found: '{}'. Line Number: {}",
+                        "Input file: {}\nFastQ Format Error: Record 1 expected '@' but found: '{}' on line number: {}",
                         fname, String::from_utf8_lossy(&buffer), line_num
                     ));
                 }
                 let hash = Hash128::hash(&buffer);
                 if !read_ids.insert(hash) {
                     return Err(format!(
-                        "Input file: {}\nDuplicate read detected: '{}'.",
-                        fname, String::from_utf8_lossy(&buffer)
+                        "Input file: {}\nDuplicate read detected: '{}' on line number {}.",
+                        fname, String::from_utf8_lossy(&buffer), line_num
                     ));
                 }
             }
             2 => {
                 if buffer.iter().any(|&c| !allowed_bases[c as usize]) {
                     return Err(format!(
-                        "Input file: {}\nFastQ Format Error: Invalid characters in sequence '{}'. Line Number: {}",
+                        "Input file: {}\nFastQ Format Error: Invalid characters in sequence '{}' on line number: {}",
                         fname, String::from_utf8_lossy(&buffer), line_num
                     ));
                 }
@@ -71,7 +71,7 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
             3 => {
                 if !buffer.starts_with(b"+") {
                     return Err(format!(
-                        "Input file: {}\nFastQ Format Error: Record 3 expected '+' but found: '{}'. Line Number: {}",
+                        "Input file: {}\nFastQ Format Error: Record 3 expected '+' but found: '{}' on line number: {}",
                         fname, String::from_utf8_lossy(&buffer), line_num
                     ));
                 }
@@ -79,7 +79,7 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
             0 => { // quality line
                 if buffer.len() != len_read_seq {
                     return Err(format!(
-                        "Input file: {}\nFastQ Format Error: Read Qual Length != Read Seq Length. Line Number: '{}'", 
+                        "Input file: {}\nFastQ Format Error: Read Qual Length != Read Seq Length on line number: {}",
                         fname, line_num
                     ));
                 }

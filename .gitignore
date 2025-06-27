@@ -75,3 +75,4 @@ docs/_build/
 
 # Rust
 Cargo.lock
+uv.lock
