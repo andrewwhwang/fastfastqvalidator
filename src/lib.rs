@@ -3,12 +3,14 @@ use pyo3::create_exception;
 use pyo3::exceptions::PyException;
 
 use std::collections::HashSet;
+use fasthash::{city::Hash128, FastHash};
+
 use std::path::Path;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 fn create_alphabet() -> [bool; 256] {
-    let alphabet: &[u8] = b"ATGCNatgcna\n\r"; // Allowed bases in FastQ format
+    let alphabet: &[u8] = b"ATGCNatgcna"; // Allowed bases in FastQ format
     // Create a vector of 256 booleans initialized to false
     // and set the indices corresponding to the allowed bases to true
     let mut alphabet_vec = [false; 256];
@@ -17,7 +19,6 @@ fn create_alphabet() -> [bool; 256] {
     }
     alphabet_vec
 }
-
 
 fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
     let file = File::open(&filepath).map_err(|e| format!("Failed to open file: {}", e))?;
@@ -31,14 +32,17 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
 
     let mut read_ids = HashSet::new();
 
-    let mut len_read_seq: usize = 0;
-    let mut line_num: u64 = 0;
+    let mut len_read_seq = 0;
+    let mut line_num: u128 = 0;
 
     let allowed_bases = create_alphabet();
 
     while reader.read_until(b'\n', &mut buffer).map_err(|e| format!("Read error: {}", e))? != 0 {
         line_num += 1;
-
+        // Trim trailing newline and carriage return
+        while matches!(buffer.last(), Some(b'\n' | b'\r')) {
+            buffer.pop();
+        }
         match line_num % 4 {
             1 => { // read ID
                 if !buffer.starts_with(b"@") {
@@ -47,7 +51,8 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
                         fname, String::from_utf8_lossy(&buffer), line_num
                     ));
                 }
-                if !read_ids.insert(buffer.clone()) {
+                let hash = Hash128::hash(&buffer);
+                if !read_ids.insert(hash) {
                     return Err(format!(
                         "Input file: {}\nDuplicate read detected: '{}'.",
                         fname, String::from_utf8_lossy(&buffer)
