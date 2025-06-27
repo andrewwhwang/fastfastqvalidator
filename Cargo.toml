@@ -9,7 +9,4 @@ name = "fq"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = "0.25.0"
-thiserror = "2.0.12"
-tracing = "0.1.41"
-phf = { version = "0.12", features = ["macros"] }
+pyo3 = { version = "0.25.0", features = ["extension-module"] }
