@@ -105,7 +105,7 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
 }
 
 
-create_exception!(fq, FastqFormatError, PyException);
+create_exception!(fastfastqvalidation, FastqFormatError, PyException);
 
 
 #[pyfunction]
@@ -116,7 +116,7 @@ fn validate(file_name:String) -> PyResult<()> {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn fq(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn fastfastqvalidation(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(validate, m)?)?;
     m.add("FastqFormatError", py.get_type::<FastqFormatError>())?;
     Ok(())
