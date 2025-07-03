@@ -3,7 +3,8 @@ use pyo3::create_exception;
 use pyo3::exceptions::PyException;
 
 use std::collections::HashSet;
-use fasthash::{city::Hash128, FastHash};
+use std::hash::BuildHasherDefault;
+use xxhash_rust::xxh3::{xxh3_128, Xxh3Default};
 
 use std::path::Path;
 use std::fs::File;
@@ -31,8 +32,8 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
 
     let mut reader = BufReader::new(file);
     let mut buffer = Vec::new();
-
-    let mut read_ids = HashSet::with_capacity(10000);
+    
+    let mut read_ids: HashSet<u128, BuildHasherDefault<Xxh3Default>> = HashSet::default();
 
     let mut len_read_seq = 0;
     let mut line_num: u128 = 0;
@@ -53,7 +54,7 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
                         fname, String::from_utf8_lossy(&buffer), line_num
                     ));
                 }
-                let hash = Hash128::hash(&buffer);
+                let hash = xxh3_128(&buffer);
                 if !read_ids.insert(hash) {
                     return Err(format!(
                         "Input file: {}\nDuplicate read detected: '{}' on line number {}.",
