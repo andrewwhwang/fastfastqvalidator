@@ -9,13 +9,15 @@ use std::path::Path;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-fn create_alphabet() -> [bool; 256] {
-    let alphabet: &[u8] = b"ATGCNatgcna"; // Allowed bases in FastQ format
+const fn create_alphabet() -> [bool; 256] {
+    const ALPHABET: &[u8] = b"ATGCNatgcna"; // Allowed bases in FastQ format
     // Create a vector of 256 booleans initialized to false
     // and set the indices corresponding to the allowed bases to true
     let mut alphabet_vec = [false; 256];
-    for &base in alphabet {
-        alphabet_vec[base as usize] = true;
+    let mut i = 0;
+    while i < ALPHABET.len() {
+        alphabet_vec[ALPHABET[i] as usize] = true;
+        i += 1;
     }
     alphabet_vec
 }
@@ -35,7 +37,7 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
     let mut len_read_seq = 0;
     let mut line_num: u128 = 0;
 
-    let allowed_bases = create_alphabet();
+    const ALLOWED_BASES: [bool; 256] = create_alphabet();
 
     while reader.read_until(b'\n', &mut buffer).map_err(|e| format!("Read error: {}", e))? != 0 {
         line_num += 1;
@@ -60,7 +62,7 @@ fn run<P: AsRef<Path>>(filepath: P) -> Result<(), String> {
                 }
             }
             2 => {
-                if buffer.iter().any(|&c| !allowed_bases[c as usize]) {
+                if buffer.iter().any(|&c| !ALLOWED_BASES[c as usize]) {
                     return Err(format!(
                         "Input file: {}\nFastQ Format Error: Invalid characters in sequence '{}' on line number: {}",
                         fname, String::from_utf8_lossy(&buffer), line_num
